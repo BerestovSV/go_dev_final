@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  todo-server:
+    build: .
+    ports:
+      - "7540:7540"
+    environment:
+      - TODO_PASSWORD=mysecretpassword
+      - TODO_DBFILE=/app/data/scheduler.db
+    volumes:
+      - todo-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  todo-data:
