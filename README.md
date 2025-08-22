@@ -1,6 +1,6 @@
-Простой сервер для управления задачами с поддержкой повторяющихся событий и JWT аутентификацией.
+# Простой сервер для управления задачами с поддержкой повторяющихся событий и JWT аутентификацией.
 
-### Функциональность
+## Функциональность
 
 - Создание, редактирование, удаление задач
 - Поддержка повторяющихся задач (ежедневно, еженедельно, ежемесячно, ежегодно)
@@ -8,24 +8,26 @@
 - Поиск задач по тексту и дате
 - RESTful API
 
-### Список выполненных заданий со звёздочкой:
+## Список выполненных заданий со звёздочкой:
 - Возможность определять путь к файлу базы данных через переменную окружения;
 - Вычисление следующих дат в случае недель и месяцев;
 - Реализован поиск задач по тексту заголовка/комментария или дате;
 
-### Локальный запуск
+## Локальный запуск
 1. Установите зависимости
-    go mod download
+```bash
+go mod download
+```
 2. Запустите сервер с переменными окружения:
-    ```bash
-    export TODO_PASSWORD=mysecretpassword
-    export TODO_DBFILE=./scheduler.db
-    export JWT_SECRET=mysupersecretpassword
-    export TODO_PORT=7540
-    export TOKEN_DURATION=8h
+```bash
+export TODO_PASSWORD=mysecretpassword
+export TODO_DBFILE=./scheduler.db
+export JWT_SECRET=mysupersecretpassword
+export TODO_PORT=7540
+export TOKEN_DURATION=8h
 
-    go run main.go
-    ```
+go run main.go
+```
     
 ### Пример .env файла
 ```bash
@@ -48,8 +50,8 @@ API endpoints:
 - POST /api/task/done - отметить задачу выполненной
 - GET /api/nextdate - рассчитать следующую дату
 
-### Примеры запросов
-## Создание задачи:
+## Примеры запросов
+### Создание задачи:
 ```bash
 curl -X POST http://localhost:7540/api/task \
 -H "Content-Type: application/json" \
@@ -60,20 +62,20 @@ curl -X POST http://localhost:7540/api/task \
     "repeat": "d 1"
 }'
 ```
-## Аутентификация:
+### Аутентификация:
 ```bash
 curl -X POST http://localhost:7540/api/signin \
 -H "Content-Type: application/json" \
 -d '{"password": "mysecretpassword"}'
 ```
 
-### Запуск тестов
-## Всех тестов:
+## Запуск тестов
+### Всех тестов:
 ```bash
 go test ./tests
 ```
 
-## Конкретного теста:
+### Конкретного теста:
 ```bash
 go test -run ^наименование_теста$ ./tests
 ```
@@ -86,15 +88,15 @@ go test -run ^наименование_теста$ ./tests
     Token = "token"
 
 ## Сборка и запуск проекта через докер
-# Сборка и запуск
+### Сборка и запуск
 ```bash
 docker-compose up -d
 ```
-# Только сборка
+### Только сборка
 ```bash
 docker build -t todo-server .
 ```
-# Запуск контейнера
+### Запуск контейнера
 ```bash
 docker run -p 7540:7540 \
   -e TODO_PASSWORD=mysecretpassword \
