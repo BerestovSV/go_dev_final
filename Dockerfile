@@ -2,11 +2,17 @@ FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 COPY . .
+
+ENV CGO_ENABLED=0
+
 RUN go mod download
-RUN CGO_ENABLED=1 GOOS=linux go build -o /todo-server
+RUN GOOS=linux go build -o /todo-server
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates libc6-compat
+
+# Минимальные зависимости (только ca-certificates)
+RUN apk add --no-cache ca-certificates
+
 WORKDIR /root/
 COPY --from=builder /todo-server .
 COPY web ./web/

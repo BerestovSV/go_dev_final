@@ -2,21 +2,17 @@ version: '3.8'
 
 services:
   todo-server:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "7540:7540"
     environment:
-      - TODO_PASSWORD=${TODO_PASSWORD:-mysecretpassword}
-      - TODO_DBFILE=/app/data/scheduler.db
-      - JWT_SECRET=${JWT_SECRET}
+      - TODO_PASSWORD=mysecretpassword
+      - JWT_SECRET=mysupersecretpassword
+      - TODO_DBFILE=/scheduler.db
+      - TODO_PORT=7540
+      - TOKEN_DURATION=8h
     volumes:
-      - todo-data:/app/data
+      - ./todo-data:/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7540"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  todo-data:
