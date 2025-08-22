@@ -3,10 +3,9 @@
 Dockerfile
 .dockerignore
 docker-compose.yml
-README.md
+Makefile
 *.db
 *.log
-bin/
-dist/
-vendor/
 .env
+dist/
+tmp/
