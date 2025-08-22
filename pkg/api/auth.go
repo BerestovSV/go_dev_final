@@ -14,7 +14,6 @@ import (
 
 const (
 	tokenCookieName = "token"
-	tokenDuration   = 8 * time.Hour
 )
 
 // JWTClaims - кастомные claims для нашего токена
@@ -24,25 +23,20 @@ type JWTClaims struct {
 }
 
 // authMiddleware - middleware для проверки аутентификации
-func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (a *API) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Проверяем, требуется ли аутентификация
-		password := os.Getenv("TODO_PASSWORD")
-		if password == "" {
-			// Аутентификация не требуется
+		if a.config.Password == "" {
 			next(w, r)
 			return
 		}
 
-		// Получаем токен из куки
-		tokenString := getTokenFromRequest(r)
+		tokenString := a.getTokenFromRequest(r)
 		if tokenString == "" {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
 			return
 		}
 
-		// Валидируем токен
-		valid, err := validateToken(tokenString, password)
+		valid, err := a.validateToken(tokenString, a.config.Password)
 		if err != nil || !valid {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
 			return
@@ -53,7 +47,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // getTokenFromRequest - извлекает токен из куки или заголовка
-func getTokenFromRequest(r *http.Request) string {
+func (a *API) getTokenFromRequest(r *http.Request) string {
 	// Пробуем получить из куки
 	cookie, err := r.Cookie(tokenCookieName)
 	if err == nil && cookie.Value != "" {
@@ -70,10 +64,9 @@ func getTokenFromRequest(r *http.Request) string {
 }
 
 // validateToken - проверяет валидность JWT токена
-func validateToken(tokenString, password string) (bool, error) {
-	// Парсим токен
+func (a *API) validateToken(tokenString, password string) (bool, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(getPasswordHash(password)), nil
+		return []byte(a.config.JWTSecret), nil
 	})
 
 	if err != nil {
@@ -81,8 +74,7 @@ func validateToken(tokenString, password string) (bool, error) {
 	}
 
 	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
-		// Проверяем, что хэш пароля в токене совпадает с текущим
-		currentHash := getPasswordHash(password)
+		currentHash := a.getPasswordHash(password)
 		return claims.PasswordHash == currentHash, nil
 	}
 
@@ -90,27 +82,26 @@ func validateToken(tokenString, password string) (bool, error) {
 }
 
 // generateToken - генерирует JWT токен
-func generateToken(password string) (string, error) {
+func (a *API) generateToken(password string) (string, error) {
 	claims := JWTClaims{
-		PasswordHash: getPasswordHash(password),
+		PasswordHash: a.getPasswordHash(password),
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenDuration)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.config.TokenDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(getPasswordHash(password)))
+	return token.SignedString([]byte(a.config.JWTSecret))
 }
 
-// getPasswordHash - возвращает хэш пароля
-func getPasswordHash(password string) string {
+func (a *API) getPasswordHash(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return fmt.Sprintf("%x", hash)
 }
 
 // signinHandler - обработчик аутентификации
-func signinHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) signinHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, errResp{Error: "method not allowed"})
 		return
@@ -133,11 +124,11 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Password != expectedPassword {
-		writeJSON(w, http.StatusUnauthorized, errResp{Error: "Неверный пароль"})
+		writeJSON(w, http.StatusUnauthorized, errResp{Error: "wrong password"})
 		return
 	}
 
-	token, err := generateToken(expectedPassword)
+	token, err := a.generateToken(expectedPassword)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, errResp{Error: "failed to generate token"})
 		return
@@ -147,7 +138,7 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     tokenCookieName,
 		Value:    token,
-		Expires:  time.Now().Add(tokenDuration),
+		Expires:  time.Now().Add(a.config.TokenDuration),
 		HttpOnly: true,
 		Path:     "/",
 	})

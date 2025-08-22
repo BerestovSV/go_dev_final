@@ -7,9 +7,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// глобальная переменная для соединения (оставляем как есть)
-var DB *sql.DB
-
 // SQL-схема для создания таблицы и индекса
 const schema = `
 CREATE TABLE scheduler (
@@ -22,28 +19,41 @@ CREATE TABLE scheduler (
 CREATE INDEX task_date ON scheduler(date);
 `
 
-func Init(dbFile string) error {
+type Database struct {
+	db *sql.DB
+}
+
+// Интерфейс для работы с задачами
+type TaskStore interface {
+	AddTask(task *Task) (int64, error)
+	GetTask(id string) (*Task, error)
+	UpdateTask(task *Task) error
+	DeleteTask(id string) error
+	Tasks(limit int) ([]*Task, error)
+	SearchTasksByText(search string, limit int) ([]*Task, error)
+	SearchTasksByDate(date string, limit int) ([]*Task, error)
+	UpdateDate(id string, newDate string) error
+}
+
+func NewDatabase(dbFile string) (*Database, error) {
 	_, err := os.Stat(dbFile)
-	install := false
-	if err != nil {
-		if os.IsNotExist(err) {
-			install = true
-		} else {
-			return err
-		}
-	}
+	install := os.IsNotExist(err)
+
 	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if install {
 		if _, err := db.Exec(schema); err != nil {
 			db.Close()
-			return err
+			return nil, err
 		}
 	}
 
-	DB = db // используем нашу глобальную переменную
-	return nil
+	return &Database{db: db}, nil
+}
+
+func (d *Database) Close() error {
+	return d.db.Close()
 }

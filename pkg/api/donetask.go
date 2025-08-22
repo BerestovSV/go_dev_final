@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"todo-server/pkg/db"
 )
 
-func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, errResp{Error: "method not allowed"})
 		return
@@ -21,7 +20,7 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получаем задачу
-	task, err := db.GetTask(id)
+	task, err := a.taskStore.GetTask(id)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, errResp{Error: err.Error()})
 		return
@@ -29,7 +28,7 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Если задача не повторяющаяся - удаляем
 	if strings.TrimSpace(task.Repeat) == "" {
-		err = db.DeleteTask(id)
+		err = a.taskStore.DeleteTask(id)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, errResp{Error: err.Error()})
 			return
@@ -48,7 +47,7 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Обновляем дату задачи
-		err = db.UpdateDate(id, nextDate)
+		err = a.taskStore.UpdateDate(id, nextDate)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, errResp{Error: err.Error()})
 			return

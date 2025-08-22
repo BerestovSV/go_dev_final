@@ -9,14 +9,14 @@ import (
 	"todo-server/pkg/db"
 )
 
-func getTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		writeJSON(w, http.StatusBadRequest, errResp{Error: "Не указан идентификатор"})
 		return
 	}
 
-	task, err := db.GetTask(id)
+	task, err := a.taskStore.GetTask(id)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, errResp{Error: err.Error()})
 		return
@@ -25,7 +25,7 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, task)
 }
 
-func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errResp{Error: fmt.Sprintf("read body error: %v", err)})
@@ -58,7 +58,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3) обновляем задачу в БД
-	err = db.UpdateTask(&task)
+	err = a.taskStore.UpdateTask(&task)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, errResp{Error: err.Error()})
 		return

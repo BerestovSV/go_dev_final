@@ -4,16 +4,16 @@ import (
 	"net/http"
 )
 
-func taskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) taskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		addTaskHandler(w, r)
+		a.addTaskHandler(w, r)
 	case http.MethodGet:
-		getTaskHandler(w, r)
+		a.getTaskHandler(w, r)
 	case http.MethodPut:
-		updateTaskHandler(w, r)
+		a.updateTaskHandler(w, r)
 	case http.MethodDelete:
-		deleteTaskHandler(w, r)
+		a.deleteTaskHandler(w, r)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}

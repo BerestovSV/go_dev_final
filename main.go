@@ -3,38 +3,36 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"todo-server/pkg/api"
+	"todo-server/pkg/config"
 	"todo-server/pkg/db"
 )
 
 func main() {
-	// Получаем значение переменной окружения
-	dbFile := os.Getenv("TODO_DBFILE")
+	// Загружаем конфигурацию
+	cfg := config.Load()
 
-	// Если переменная пустая, используем путь по умолчанию
-	if dbFile == "" {
-		dbFile = "scheduler.db"
+	// Создаем подключение к БД
+	database, err := db.NewDatabase(cfg.DBFile)
+	if err != nil {
+		log.Fatalf("Ошибка инициализации базы: %v", err)
 	}
-
-	if err := db.Init(dbFile); err != nil {
-		log.Fatalf("Ошибка инициализации базы %v", err)
-	}
+	defer database.Close()
 
 	log.Println("База данных готова к работе")
 
-	api.Init()
+	// Создаем API с конфигом и БД
+	api := api.NewAPI(database, cfg)
+	router := api.Init()
 
+	// Статический контент
 	webDir := "./web"
-
 	fileServer := http.FileServer(http.Dir(webDir))
+	router.Handle("/", fileServer)
 
-	http.Handle("/", fileServer)
+	log.Printf("Сервер запущен на http://localhost%v", cfg.Port)
 
-	port := ":7540"
-	log.Printf("Сервер запущен на http://localhost%v", port)
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
+	if err := http.ListenAndServe(cfg.Port, router); err != nil {
 		log.Fatal(err)
 	}
 }

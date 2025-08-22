@@ -5,7 +5,7 @@ import (
 	"todo-server/pkg/db"
 )
 
-func tasksHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) tasksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, errResp{Error: "method not allowed"})
 		return
@@ -26,14 +26,14 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Ищем задачи по дате
-			tasks, err = db.SearchTasksByDate(dbDate, 50)
+			tasks, err = a.taskStore.SearchTasksByDate(dbDate, 50)
 		} else {
 			// Ищем задачи по тексту
-			tasks, err = db.SearchTasksByText(search, 50)
+			tasks, err = a.taskStore.SearchTasksByText(search, 50)
 		}
 	} else {
 		// Получаем все задачи
-		tasks, err = db.Tasks(50)
+		tasks, err = a.taskStore.Tasks(50)
 	}
 
 	if err != nil {

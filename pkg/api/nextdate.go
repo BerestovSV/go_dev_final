@@ -8,7 +8,7 @@ import (
 
 const DateFormat = "20060102"
 
-func nextDayHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	nowStr := r.FormValue("now")
 	dateStr := r.FormValue("date")
 	repeat := r.FormValue("repeat")

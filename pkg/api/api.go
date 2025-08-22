@@ -1,16 +1,31 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+	"todo-server/pkg/config"
+	"todo-server/pkg/db"
+)
 
-func Init() {
-	http.HandleFunc("/api/nextdate", nextDayHandler)
-	http.HandleFunc("/api/task", authMiddleware(taskHandler))
-	http.HandleFunc("/api/tasks", authMiddleware(tasksHandler))
-	http.HandleFunc("/api/task/done", authMiddleware(doneTaskHandler))
-	http.HandleFunc("/api/signin", signinHandler)
+type API struct {
+	taskStore db.TaskStore
+	config    *config.Config
+}
 
-	// http.HandleFunc("/api/nextdate", nextDayHandler)
-	// http.HandleFunc("/api/task", taskHandler)
-	// http.HandleFunc("/api/tasks", tasksHandler)
-	// http.HandleFunc("/api/task/done", doneTaskHandler)
+func NewAPI(taskStore db.TaskStore, cfg *config.Config) *API {
+	return &API{
+		taskStore: taskStore,
+		config:    cfg,
+	}
+}
+
+func (a *API) Init() *http.ServeMux {
+	router := http.NewServeMux()
+
+	router.HandleFunc("/api/nextdate", a.nextDayHandler)
+	router.HandleFunc("/api/task", a.authMiddleware(a.taskHandler))
+	router.HandleFunc("/api/tasks", a.authMiddleware(a.tasksHandler))
+	router.HandleFunc("/api/task/done", a.authMiddleware(a.doneTaskHandler))
+	router.HandleFunc("/api/signin", a.signinHandler)
+
+	return router
 }

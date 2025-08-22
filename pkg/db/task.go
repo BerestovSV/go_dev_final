@@ -15,27 +15,19 @@ type Task struct {
 	Repeat  string `json:"repeat,omitempty"` // правило повторения (может быть пустым)
 }
 
-func AddTask(task *Task) (int64, error) {
-	var id int64
-	if DB == nil {
-		return 0, errors.New("database is not initialized")
-	}
+func (d *Database) AddTask(task *Task) (int64, error) {
 	const query = `
-		INSERT INTO scheduler (date, title, comment, repeat)
-		VALUES (?, ?, ?, ?)
-	`
-	res, err := DB.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
-	if err == nil {
-		id, err = res.LastInsertId()
+        INSERT INTO scheduler (date, title, comment, repeat)
+        VALUES (?, ?, ?, ?)
+    `
+	res, err := d.db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	if err != nil {
+		return 0, err
 	}
-	return id, err
+	return res.LastInsertId()
 }
 
-func Tasks(limit int) ([]*Task, error) {
-	if DB == nil {
-		return nil, errors.New("database is not initialized")
-	}
-
+func (d *Database) Tasks(limit int) ([]*Task, error) {
 	const query = `
 		SELECT id, date, title, comment, repeat 
 		FROM scheduler 
@@ -44,7 +36,7 @@ func Tasks(limit int) ([]*Task, error) {
 		LIMIT ?
 	`
 
-	rows, err := DB.Query(query, limit)
+	rows, err := d.db.Query(query, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +67,7 @@ func Tasks(limit int) ([]*Task, error) {
 	return tasks, nil
 }
 
-func GetTask(id string) (*Task, error) {
-	if DB == nil {
-		return nil, errors.New("database is not initialized")
-	}
-
+func (d *Database) GetTask(id string) (*Task, error) {
 	// Конвертируем string ID в int64 для базы данных
 	taskID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -94,7 +82,7 @@ func GetTask(id string) (*Task, error) {
 
 	var task Task
 	var dbID int64
-	err = DB.QueryRow(query, taskID).Scan(&dbID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	err = d.db.QueryRow(query, taskID).Scan(&dbID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("задача не найдена")
@@ -107,11 +95,7 @@ func GetTask(id string) (*Task, error) {
 	return &task, nil
 }
 
-func UpdateTask(task *Task) error {
-	if DB == nil {
-		return errors.New("database is not initialized")
-	}
-
+func (d *Database) UpdateTask(task *Task) error {
 	// Конвертируем string ID в int64 для базы данных
 	taskID, err := strconv.ParseInt(task.ID, 10, 64)
 	if err != nil {
@@ -124,7 +108,7 @@ func UpdateTask(task *Task) error {
 		WHERE id = ?
 	`
 
-	res, err := DB.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, taskID)
+	res, err := d.db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, taskID)
 	if err != nil {
 		return err
 	}
@@ -141,11 +125,7 @@ func UpdateTask(task *Task) error {
 	return nil
 }
 
-func DeleteTask(id string) error {
-	if DB == nil {
-		return errors.New("database is not initialized")
-	}
-
+func (d *Database) DeleteTask(id string) error {
 	taskID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return errors.New("некорректный идентификатор задачи")
@@ -153,7 +133,7 @@ func DeleteTask(id string) error {
 
 	const query = `DELETE FROM scheduler WHERE id = ?`
 
-	res, err := DB.Exec(query, taskID)
+	res, err := d.db.Exec(query, taskID)
 	if err != nil {
 		return err
 	}
@@ -169,11 +149,7 @@ func DeleteTask(id string) error {
 	return nil
 }
 
-func UpdateDate(id string, newDate string) error {
-	if DB == nil {
-		return errors.New("database is not initialized")
-	}
-
+func (d *Database) UpdateDate(id string, newDate string) error {
 	taskID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return errors.New("некорректный идентификатор задачи")
@@ -181,7 +157,7 @@ func UpdateDate(id string, newDate string) error {
 
 	const query = `UPDATE scheduler SET date = ? WHERE id = ?`
 
-	res, err := DB.Exec(query, newDate, taskID)
+	res, err := d.db.Exec(query, newDate, taskID)
 	if err != nil {
 		return err
 	}
@@ -197,11 +173,7 @@ func UpdateDate(id string, newDate string) error {
 	return nil
 }
 
-func SearchTasksByText(search string, limit int) ([]*Task, error) {
-	if DB == nil {
-		return nil, errors.New("database is not initialized")
-	}
-
+func (d *Database) SearchTasksByText(search string, limit int) ([]*Task, error) {
 	searchPattern := "%" + search + "%"
 	query := `
 		SELECT id, date, title, comment, repeat 
@@ -212,7 +184,7 @@ func SearchTasksByText(search string, limit int) ([]*Task, error) {
 		LIMIT ?
 	`
 
-	rows, err := DB.Query(query, searchPattern, searchPattern, limit)
+	rows, err := d.db.Query(query, searchPattern, searchPattern, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -222,11 +194,7 @@ func SearchTasksByText(search string, limit int) ([]*Task, error) {
 }
 
 // SearchTasksByDate ищет задачи по конкретной дате
-func SearchTasksByDate(date string, limit int) ([]*Task, error) {
-	if DB == nil {
-		return nil, errors.New("database is not initialized")
-	}
-
+func (d *Database) SearchTasksByDate(date string, limit int) ([]*Task, error) {
 	query := `
 		SELECT id, date, title, comment, repeat 
 		FROM scheduler 
@@ -235,7 +203,7 @@ func SearchTasksByDate(date string, limit int) ([]*Task, error) {
 		LIMIT ?
 	`
 
-	rows, err := DB.Query(query, date, limit)
+	rows, err := d.db.Query(query, date, limit)
 	if err != nil {
 		return nil, err
 	}

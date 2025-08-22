@@ -10,7 +10,7 @@ import (
 	"todo-server/pkg/db"
 )
 
-func addTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, errResp{Error: "method not allowed"})
 		return
@@ -42,7 +42,7 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3) добавляем в БД
-	id, err := db.AddTask(&task)
+	id, err := a.taskStore.AddTask(&task)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, errResp{Error: err.Error()})
 		return

@@ -2,10 +2,9 @@ package api
 
 import (
 	"net/http"
-	"todo-server/pkg/db"
 )
 
-func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+func (a *API) deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		writeJSON(w, http.StatusMethodNotAllowed, errResp{Error: "method not allowed"})
 		return
@@ -17,7 +16,7 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.DeleteTask(id)
+	err := a.taskStore.DeleteTask(id)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, errResp{Error: err.Error()})
 		return

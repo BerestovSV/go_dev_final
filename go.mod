@@ -7,9 +7,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 	modernc.org/sqlite v1.38.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/jmoiron/sqlx v1.4.0
-	github.com/stretchr/testify v1.10.0
-	modernc.org/sqlite v1.38.2
 )
 
 require (
