@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  todo-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7540:7540"
+    environment:
+      - TODO_PASSWORD=mysecretpassword
+      - JWT_SECRET=mysupersecretpassword
+      - TODO_DBFILE=/scheduler.db
+      - TODO_PORT=7540
+      - TOKEN_DURATION=8h
+    volumes:
+      - ./todo-data:/data
+    restart: unless-stopped
